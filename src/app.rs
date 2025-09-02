@@ -37,20 +37,6 @@ impl App {
 }
 
 impl ApplicationHandler<Graphics> for App {
-    fn window_event(
-        &mut self,
-        event_loop: &ActiveEventLoop,
-        _window_id: WindowId,
-        event: WindowEvent,
-    ) {
-        match event {
-            WindowEvent::Resized(size) => self.resized(size),
-            WindowEvent::RedrawRequested => self.draw(),
-            WindowEvent::CloseRequested => event_loop.exit(),
-            _ => {}
-        }
-    }
-
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         if let State::Init(proxy) = &mut self.state {
             if let Some(proxy) = proxy.take() {
@@ -84,5 +70,19 @@ impl ApplicationHandler<Graphics> for App {
 
     fn user_event(&mut self, _event_loop: &ActiveEventLoop, graphics: Graphics) {
         self.state = State::Ready(graphics);
+    }
+
+    fn window_event(
+        &mut self,
+        event_loop: &ActiveEventLoop,
+        _window_id: WindowId,
+        event: WindowEvent,
+    ) {
+        match event {
+            WindowEvent::Resized(size) => self.resized(size),
+            WindowEvent::RedrawRequested => self.draw(),
+            WindowEvent::CloseRequested => event_loop.exit(),
+            _ => {}
+        }
     }
 }

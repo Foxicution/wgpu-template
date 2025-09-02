@@ -35,8 +35,8 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
                 required_limits: Limits::downlevel_webgl2_defaults()
                     .using_resolution(adapter.limits()),
                 memory_hints: MemoryHints::Performance,
+                trace: Default::default(),
             },
-            None,
         )
         .await
         .expect("Failed to get device");
@@ -119,7 +119,7 @@ impl Graphics {
         let frame = self
             .surface
             .get_current_texture()
-            .expect("Failed to aquire next swap chain texture.");
+            .expect("Failed to acquire next swap chain texture.");
 
         let view = frame.texture.create_view(&TextureViewDescriptor::default());
 
@@ -132,6 +132,7 @@ impl Graphics {
                 label: None,
                 color_attachments: &[Some(RenderPassColorAttachment {
                     view: &view,
+                    depth_slice: None,
                     resolve_target: None,
                     ops: Operations {
                         load: LoadOp::Clear(Color::GREEN),
