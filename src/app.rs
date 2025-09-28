@@ -69,6 +69,8 @@ impl ApplicationHandler<Graphics> for App {
     }
 
     fn user_event(&mut self, _event_loop: &ActiveEventLoop, graphics: Graphics) {
+        // Request a redraw now that graphics are ready
+        graphics.request_redraw();
         self.state = State::Ready(graphics);
     }
 
