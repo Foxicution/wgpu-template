@@ -109,6 +109,10 @@ pub struct Graphics {
 }
 
 impl Graphics {
+    pub fn request_redraw(&self) {
+        self.window.request_redraw();
+    }
+
     pub fn resize(&mut self, new_size: PhysicalSize<u32>) {
         self.surface_config.width = new_size.width.max(1);
         self.surface_config.height = new_size.height.max(1);
