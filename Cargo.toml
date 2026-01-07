@@ -13,7 +13,7 @@ webgl = ["wgpu/webgl"]
 winit = { version = "0.30.12" }
 env_logger = {version = "0.11.5"}
 log = { version = "0.4.22"}
-wgpu = { version = "26.0.1" }
+wgpu = { version = "27.0.1" }
 pollster = {version ="0.4.0"}
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

@@ -1,7 +1,7 @@
-# WGPU (26.0.1) + Winit (0.30.12) Template
+# WGPU (27.0.1) + Winit (0.30.12) Template
 
 This is a template repository to get started with **[WGPU](https://wgpu.rs/)
-(26.0.1)** + **[Winit](https://github.com/rust-windowing/winit) (0.30.12)**.
+(27.0.1)** + **[Winit](https://github.com/rust-windowing/winit) (0.30.12)**.
 
 The template supports **cross-platform** compilation for **Windows**, **Linux**,
 **MacOS** and **WebAssembly**, utilizing **WebGPU/WebGL** with

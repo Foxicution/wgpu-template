@@ -28,27 +28,24 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
         .expect("Could not get an adapter (GPU).");
 
     let (device, queue) = adapter
-        .request_device(
-            &DeviceDescriptor {
-                label: None,
-                required_features: Features::empty(), // Specifies the required features by the device request. Fails if the adapter can't provide them.
-                required_limits: Limits::downlevel_webgl2_defaults()
-                    .using_resolution(adapter.limits()),
-                memory_hints: MemoryHints::Performance,
-                trace: Default::default(),
-            },
-        )
+        .request_device(&DeviceDescriptor {
+            label: None,
+            required_features: Features::empty(), // Specifies the required features by the device request. Fails if the adapter can't provide them.
+            required_limits: Limits::downlevel_webgl2_defaults().using_resolution(adapter.limits()),
+            memory_hints: MemoryHints::Performance,
+            trace: Default::default(),
+            experimental_features: Default::default(),
+        })
         .await
         .expect("Failed to get device");
 
-    // Get physical pixel dimensiosn inside the window
+    // Get physical pixel dimensions inside the window
     let size = window.inner_size();
     // Make the dimensions at least size 1, otherwise wgpu would panic
     let width = size.width.max(1);
     let height = size.height.max(1);
     let surface_config = surface.get_default_config(&adapter, width, height).unwrap();
 
-    #[cfg(not(target_arch = "wasm32"))]
     surface.configure(&device, &surface_config);
 
     let render_pipeline = create_pipeline(&device, surface_config.format);
