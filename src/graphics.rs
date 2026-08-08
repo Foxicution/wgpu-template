@@ -44,7 +44,13 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
     // Make the dimensions at least size 1, otherwise wgpu would panic
     let width = size.width.max(1);
     let height = size.height.max(1);
-    let surface_config = surface.get_default_config(&adapter, width, height).unwrap();
+    let mut surface_config = surface.get_default_config(&adapter, width, height).unwrap();
+
+    // `get_default_config` picks the first present mode the surface reports, which
+    // varies by platform and driver (often Mailbox, which renders uncapped). Pin Fifo
+    // so the render loop is vsync-limited everywhere. Swap to Mailbox or Immediate for
+    // uncapped frames.
+    surface_config.present_mode = wgpu::PresentMode::Fifo;
 
     surface.configure(&device, &surface_config);
 

@@ -87,4 +87,15 @@ impl ApplicationHandler<Graphics> for App {
             _ => {}
         }
     }
+
+    // Emitted once all pending events have been processed, just before the loop waits
+    // again. ControlFlow::Poll keeps the loop spinning, but a frame is only drawn when
+    // something explicitly asks for one, so requesting the next redraw here is what
+    // turns that spinning into a continuous render loop. Without this, redraws only
+    // happen when the compositor asks for them (resize, focus, etc.).
+    fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {
+        if let State::Ready(gfx) = &self.state {
+            gfx.request_redraw();
+        }
+    }
 }
