@@ -8,7 +8,7 @@ use winit::event_loop::{ControlFlow, EventLoop};
 fn run_app(event_loop: EventLoop<Graphics>, app: App) {
     // Sets up panics to go to the console.error in browser environments
     std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-    console_log::init_with_level(log::Level::Error).expect("Couldn't initialize logger");
+    console_log::init_with_level(log::Level::Warn).expect("Couldn't initialize logger");
 
     // Runs the app async via the browsers event loop
     use winit::platform::web::EventLoopExtWebSys;
