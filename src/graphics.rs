@@ -16,7 +16,16 @@ pub type Rc<T> = std::rc::Rc<T>;
 pub type Rc<T> = std::sync::Arc<T>;
 
 pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>) {
-    let instance = Instance::default();
+    // Not `Instance::default()`. On the web, wgpu decides whether to use WebGPU when the
+    // instance is created, and a plain `Instance::new` only checks that `navigator.gpu`
+    // exists. Browsers can expose that object yet still fail to produce any WebGPU
+    // adapter, in which case the instance is locked to WebGPU and never falls back to
+    // WebGL. This helper probes for a real adapter first and drops BROWSER_WEBGPU if
+    // there isn't one, so the `webgl` feature can actually take over.
+    let instance = wgpu::util::new_instance_with_webgpu_detection(
+        InstanceDescriptor::new_without_display_handle(),
+    )
+    .await;
     let surface = instance.create_surface(Rc::clone(&window)).unwrap();
     let adapter = instance
         .request_adapter(&RequestAdapterOptions {
