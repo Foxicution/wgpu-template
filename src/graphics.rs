@@ -1,11 +1,11 @@
 use std::borrow::Cow;
 
 use wgpu::{
-    Adapter, Color, CommandEncoderDescriptor, Device, DeviceDescriptor, Features, FragmentState,
-    Instance, Limits, LoadOp, MemoryHints, Operations, PowerPreference, Queue,
-    RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RenderPipelineDescriptor,
-    RequestAdapterOptions, ShaderModuleDescriptor, ShaderSource, StoreOp, Surface,
-    SurfaceConfiguration, TextureFormat, TextureViewDescriptor, VertexState,
+    Adapter, Color, CommandEncoderDescriptor, CurrentSurfaceTexture, Device, DeviceDescriptor,
+    Features, FragmentState, Instance, InstanceDescriptor, Limits, LoadOp, MemoryHints, Operations,
+    PowerPreference, Queue, RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline,
+    RenderPipelineDescriptor, RequestAdapterOptions, ShaderModuleDescriptor, ShaderSource, StoreOp,
+    Surface, SurfaceConfiguration, TextureFormat, TextureViewDescriptor, VertexState,
 };
 use winit::{dpi::PhysicalSize, event_loop::EventLoopProxy, window::Window};
 
@@ -23,6 +23,7 @@ pub async fn create_graphics(window: Rc<Window>, proxy: EventLoopProxy<Graphics>
             power_preference: PowerPreference::default(), // Power preference for the device
             force_fallback_adapter: false, // Indicates that only a fallback ("software") adapter can be used
             compatible_surface: Some(&surface), // Guarantee that the adapter can render to this surface
+            apply_limit_buckets: false, // Rounds limits into coarse buckets to reduce fingerprinting. Only useful when exposing wgpu to untrusted content.
         })
         .await
         .expect("Could not get an adapter (GPU).");
@@ -94,7 +95,7 @@ fn create_pipeline(device: &Device, swap_chain_format: TextureFormat) -> RenderP
         primitive: Default::default(),
         depth_stencil: None,
         multisample: Default::default(),
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     })
 }
@@ -123,10 +124,26 @@ impl Graphics {
     }
 
     pub fn draw(&mut self) {
-        let frame = self
-            .surface
-            .get_current_texture()
-            .expect("Failed to acquire next swap chain texture.");
+        // `get_current_texture` reports why acquisition didn't yield a usable frame
+        // rather than collapsing it into one error, so each case is handled on its own.
+        let frame = match self.surface.get_current_texture() {
+            // Suboptimal still presents correctly, it just no longer matches the surface.
+            CurrentSurfaceTexture::Success(frame) | CurrentSurfaceTexture::Suboptimal(frame) => {
+                frame
+            }
+            // The surface configuration is stale. Reconfigure at the window's *current*
+            // size — reusing the stored config would keep the same stale dimensions and
+            // the surface would report Outdated forever, so no frame is ever acquired.
+            CurrentSurfaceTexture::Outdated | CurrentSurfaceTexture::Lost => {
+                let size = self.window.inner_size();
+                self.resize(size);
+                return;
+            }
+            // Transient, skip this frame and try again on the next one.
+            CurrentSurfaceTexture::Timeout
+            | CurrentSurfaceTexture::Occluded
+            | CurrentSurfaceTexture::Validation => return,
+        };
 
         let view = frame.texture.create_view(&TextureViewDescriptor::default());
 
@@ -147,6 +164,7 @@ impl Graphics {
                     },
                 })],
                 depth_stencil_attachment: None,
+                multiview_mask: None,
                 timestamp_writes: None,
                 occlusion_query_set: None,
             });
@@ -155,6 +173,6 @@ impl Graphics {
         } // `r_pass` dropped here
 
         self.queue.submit(Some(encoder.finish()));
-        frame.present();
+        self.queue.present(frame);
     }
 }
